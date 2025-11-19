@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sri Lanka Income Tax Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .card { transition: all 0.3s ease; }
+        .slab-row:hover { background-color: #f9fafb; }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Main Container -->
+    <div class="min-h-screen flex flex-col items-center justify-center py-10 px-4">
+        
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-blue-900 mb-2">Sri Lanka Tax Calculator</h1>
+            <p class="text-gray-600">Calculate your Personal Income Tax / APIT</p>
+        </div>
+
+        <div class="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- INPUT SECTION -->
+            <div class="col-span-1 lg:col-span-1 bg-white p-6 rounded-2xl shadow-lg card h-fit">
+                <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-calculator mr-2 text-blue-600"></i> Your Details
+                </h2>
+
+                <!-- Tax Year Selection -->
+                <div class="mb-5">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Assessment Year</label>
+                    <div class="relative">
+                        <select id="taxYear" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 appearance-none cursor-pointer">
+                            <option value="2024">Current (2024 / 2025)</option>
+                            <option value="2025">Upcoming (2025 / 2026)</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </div>
+                    </div>
+                    <p id="taxYearNote" class="text-xs text-gray-500 mt-1">Relief: Rs. 1.2M | Max Rate: 36%</p>
+                </div>
+
+                <!-- Income Frequency -->
+                <div class="mb-5">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Income Frequency</label>
+                    <div class="flex rounded-md shadow-sm" role="group">
+                        <button type="button" onclick="setFrequency('monthly')" id="btnMonthly" class="w-1/2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-blue-600 rounded-l-lg hover:bg-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-500">
+                            Monthly
+                        </button>
+                        <button type="button" onclick="setFrequency('annual')" id="btnAnnual" class="w-1/2 px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-r-lg hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-blue-500">
+                            Annually
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Gross Income Input -->
+                <div class="mb-5">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Total Gross Income (LKR)</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span class="text-gray-500 font-bold">Rs.</span>
+                        </div>
+                        <!-- Changed type to text to allow commas -->
+                        <input type="text" id="incomeInput" placeholder="0" class="pl-12 block w-full p-3 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 sm:text-sm focus:ring-blue-500 focus:border-blue-500" 
+                               oninput="handleInput(this)" 
+                               onblur="formatInputOnBlur(this)" 
+                               onfocus="unformatInputOnFocus(this)">
+                    </div>
+                </div>
+
+                <!-- Deductions Input (Optional) -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Qualifying Payments / Deductions
+                        <i class="fas fa-info-circle text-gray-400 ml-1 cursor-help" title="E.g., Donation to approved charity, etc."></i>
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span class="text-gray-500 font-bold">Rs.</span>
+                        </div>
+                        <!-- Changed type to text to allow commas -->
+                        <input type="text" id="deductionsInput" placeholder="0" class="pl-12 block w-full p-3 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 sm:text-sm focus:ring-blue-500 focus:border-blue-500" 
+                               oninput="handleInput(this)" 
+                               onblur="formatInputOnBlur(this)" 
+                               onfocus="unformatInputOnFocus(this)">
+                    </div>
+                </div>
+
+                <button onclick="calculateTax()" class="w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-3 text-center transition-colors">
+                    Calculate Tax
+                </button>
+            </div>
+
+            <!-- RESULTS SECTION -->
+            <div class="col-span-1 lg:col-span-2 flex flex-col gap-6">
+                
+                <!-- Main Summary Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-lg card animate-fade-in w-full overflow-hidden">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">Tax Summary</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Monthly Tax -->
+                        <div class="bg-blue-50 rounded-xl p-4 border border-blue-100 flex flex-col justify-center min-w-0">
+                            <p class="text-sm text-blue-600 font-medium uppercase tracking-wider whitespace-nowrap">Monthly Tax (APIT)</p>
+                            <h3 class="text-2xl md:text-3xl font-bold text-blue-900 mt-1 break-words leading-tight" id="displayMonthlyTax">Rs. 0.00</h3>
+                            <p class="text-xs text-blue-400 mt-1">Deducted from salary</p>
+                        </div>
+
+                        <!-- Annual Tax -->
+                        <div class="bg-indigo-50 rounded-xl p-4 border border-indigo-100 flex flex-col justify-center min-w-0">
+                            <p class="text-sm text-indigo-600 font-medium uppercase tracking-wider whitespace-nowrap">Annual Tax Payable</p>
+                            <h3 class="text-2xl md:text-3xl font-bold text-indigo-900 mt-1 break-words leading-tight" id="displayAnnualTax">Rs. 0.00</h3>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                        <div class="p-2 min-w-0">
+                            <p class="text-xs text-gray-500 truncate">Gross Annual Income</p>
+                            <p class="font-semibold text-gray-800 break-words text-sm md:text-base" id="displayGrossAnnual">Rs. 0</p>
+                        </div>
+                        <div class="p-2 min-w-0">
+                            <p class="text-xs text-gray-500 truncate">Tax Free Relief</p>
+                            <p class="font-semibold text-green-600 break-words text-sm md:text-base" id="displayRelief">Rs. 1,200,000</p>
+                        </div>
+                         <div class="p-2 min-w-0">
+                            <p class="text-xs text-gray-500 truncate">Taxable Income</p>
+                            <p class="font-semibold text-orange-600 break-words text-sm md:text-base" id="displayTaxable">Rs. 0</p>
+                        </div>
+                        <div class="p-2 min-w-0">
+                            <p class="text-xs text-gray-500 truncate">Net Monthly Income</p>
+                            <p class="font-semibold text-gray-800 break-words text-sm md:text-base" id="displayNetMonthly">Rs. 0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Breakdown -->
+                <div class="bg-white p-6 rounded-2xl shadow-lg card flex-grow animate-fade-in w-full">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Calculation Breakdown</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3 rounded-l-lg whitespace-nowrap">Tax Slab (LKR)</th>
+                                    <th scope="col" class="px-4 py-3">Rate</th>
+                                    <th scope="col" class="px-4 py-3 text-right rounded-r-lg whitespace-nowrap">Tax Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="breakdownBody">
+                                <!-- Rows will be injected here by JS -->
+                                <tr>
+                                    <td colspan="3" class="text-center py-4 text-gray-400">Enter income to see breakdown</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr class="font-bold text-gray-900 bg-gray-50">
+                                    <td class="px-4 py-3">TOTAL</td>
+                                    <td class="px-4 py-3"></td>
+                                    <td class="px-4 py-3 text-right" id="breakdownTotal">Rs. 0.00</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="mt-8 max-w-4xl text-center">
+             <p class="text-xs text-gray-400">
+                Disclaimer: This tool is for estimation purposes only. 
+                Current Rules (Y/A 2024/25): Relief 1.2M. 
+                Upcoming Rules (Y/A 2025/26): Relief 1.8M, effective April 1, 2025. 
+                Consult a tax professional for official filing.
+            </p>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Configuration Data ---
+        const taxConfig = {
+            '2024': {
+                relief: 1200000,
+                slabs: [
+                    { width: 500000, rate: 0.06 },
+                    { width: 500000, rate: 0.12 },
+                    { width: 500000, rate: 0.18 },
+                    { width: 500000, rate: 0.24 },
+                    { width: 500000, rate: 0.30 },
+                    { width: Infinity, rate: 0.36 }
+                ],
+                note: "Current Law: Relief Rs. 1.2M | Slabs of 500k (6% - 36%)"
+            },
+            '2025': {
+                relief: 1800000,
+                slabs: [
+                    { width: 1000000, rate: 0.06 },
+                    { width: 500000, rate: 0.18 }, // Note: 12% is skipped in the new proposal
+                    { width: 500000, rate: 0.24 },
+                    { width: 500000, rate: 0.30 },
+                    { width: Infinity, rate: 0.36 }
+                ],
+                note: "Effective April 1, 2025: Relief Rs. 1.8M | First 1M at 6%"
+            }
+        };
+
+        // --- State ---
+        let currentFrequency = 'monthly';
+
+        // --- DOM Elements ---
+        const incomeInput = document.getElementById('incomeInput');
+        const deductionsInput = document.getElementById('deductionsInput');
+        const taxYearSelect = document.getElementById('taxYear');
+        const taxYearNote = document.getElementById('taxYearNote');
+        
+        const displayMonthlyTax = document.getElementById('displayMonthlyTax');
+        const displayAnnualTax = document.getElementById('displayAnnualTax');
+        const displayGrossAnnual = document.getElementById('displayGrossAnnual');
+        const displayRelief = document.getElementById('displayRelief');
+        const displayTaxable = document.getElementById('displayTaxable');
+        const displayNetMonthly = document.getElementById('displayNetMonthly');
+        const breakdownBody = document.getElementById('breakdownBody');
+        const breakdownTotal = document.getElementById('breakdownTotal');
+
+        // --- Input Formatting Functions ---
+        
+        // Clean commas from string and return number
+        function parseRawValue(valStr) {
+            if (!valStr) return 0;
+            // Remove all non-numeric characters except decimal point
+            const cleanStr = valStr.toString().replace(/,/g, '');
+            return parseFloat(cleanStr) || 0;
+        }
+
+        // Format number with commas
+        function formatNumberString(num) {
+            if (num === '' || num === undefined || num === null) return '';
+            return num.toLocaleString('en-LK');
+        }
+
+        function handleInput(el) {
+            // Allow user to type, just trigger calculation
+            // We rely on raw parsing in calculateTax
+            calculateTax();
+        }
+
+        function formatInputOnBlur(el) {
+            const rawVal = parseRawValue(el.value);
+            if (rawVal > 0) {
+                el.value = formatNumberString(rawVal);
+            } else {
+                el.value = ''; // Clear if 0 or empty
+            }
+        }
+
+        function unformatInputOnFocus(el) {
+            const rawVal = parseRawValue(el.value);
+            if (rawVal > 0) {
+                el.value = rawVal; // Remove commas for editing
+            } else {
+                el.value = '';
+            }
+        }
+
+        // --- Helper Functions ---
+        const formatCurrency = (num) => {
+            return new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(num);
+        };
+
+        // --- Event Listeners ---
+        taxYearSelect.addEventListener('change', () => {
+            const year = taxYearSelect.value;
+            taxYearNote.innerText = taxConfig[year].note;
+            calculateTax();
+        });
+
+        function setFrequency(freq) {
+            currentFrequency = freq;
+            
+            const btnMonthly = document.getElementById('btnMonthly');
+            const btnAnnual = document.getElementById('btnAnnual');
+
+            if (freq === 'monthly') {
+                btnMonthly.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+                btnMonthly.classList.remove('bg-white', 'text-gray-900', 'border-gray-300');
+                btnAnnual.classList.add('bg-white', 'text-gray-900', 'border-gray-300');
+                btnAnnual.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+            } else {
+                btnAnnual.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+                btnAnnual.classList.remove('bg-white', 'text-gray-900', 'border-gray-300');
+                btnMonthly.classList.add('bg-white', 'text-gray-900', 'border-gray-300');
+                btnMonthly.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+            }
+            calculateTax();
+        }
+
+        // --- Core Logic ---
+        function calculateTax() {
+            const year = taxYearSelect.value;
+            const config = taxConfig[year];
+            
+            // Parse inputs using the comma-aware parser
+            let inputVal = parseRawValue(incomeInput.value);
+            let deductionVal = parseRawValue(deductionsInput.value);
+
+            // 1. Determine Annual Gross
+            let annualGross = currentFrequency === 'monthly' ? inputVal * 12 : inputVal;
+            
+            // 2. Calculate Taxable Income
+            // Taxable = Assessable (Gross) - Personal Relief - Other Deductions
+            // Note: Deductions cannot make taxable income negative (min 0)
+            let totalRelief = config.relief + deductionVal;
+            let taxableIncome = Math.max(0, annualGross - totalRelief);
+
+            // 3. Calculate Tax Based on Slabs
+            let taxPayable = 0;
+            let remainingTaxable = taxableIncome;
+            let breakdownHtml = '';
+
+            config.slabs.forEach((slab, index) => {
+                if (remainingTaxable > 0) {
+                    let amountInSlab = 0;
+                    
+                    if (slab.width === Infinity) {
+                        amountInSlab = remainingTaxable;
+                    } else {
+                        amountInSlab = Math.min(remainingTaxable, slab.width);
+                    }
+
+                    let taxForSlab = amountInSlab * slab.rate;
+                    taxPayable += taxForSlab;
+                    remainingTaxable -= amountInSlab;
+
+                    // Add row to breakdown
+                    breakdownHtml += `
+                        <tr class="bg-white border-b hover:bg-gray-50 transition-colors slab-row">
+                            <td class="px-4 py-3 font-medium text-gray-900">
+                                ${slab.width === Infinity ? 'Balance' : 'Next ' + (slab.width/100000).toFixed(1) + ' Lakhs'}
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">${(slab.rate * 100).toFixed(0)}%</span>
+                            </td>
+                            <td class="px-4 py-3 text-right font-mono text-gray-600">
+                                ${formatCurrency(taxForSlab)}
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+
+            if (taxableIncome <= 0) {
+                breakdownHtml = `<tr><td colspan="3" class="text-center py-4 text-green-600 font-medium"><i class="fas fa-check-circle mr-2"></i>No Tax Payable (Income below relief threshold)</td></tr>`;
+            }
+
+            // 4. Update UI
+            displayGrossAnnual.innerText = formatCurrency(annualGross);
+            displayRelief.innerText = formatCurrency(config.relief); 
+            displayTaxable.innerText = formatCurrency(taxableIncome);
+            
+            displayAnnualTax.innerText = formatCurrency(taxPayable);
+            displayMonthlyTax.innerText = formatCurrency(taxPayable / 12);
+
+            let netAnnual = annualGross - taxPayable;
+            displayNetMonthly.innerText = formatCurrency(netAnnual / 12);
+
+            breakdownBody.innerHTML = breakdownHtml;
+            breakdownTotal.innerText = formatCurrency(taxPayable);
+        }
+
+        // Initialize
+        setFrequency('monthly');
+    </script>
+</body>
+</html>
